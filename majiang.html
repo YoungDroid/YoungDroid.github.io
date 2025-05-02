@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成都麻将听牌计算器</title>
+    <style>
+        :root {
+            --primary-color: #FF6B6B;
+            --secondary-color: #4ECDC4;
+            --bg-color: #F7FFF7;
+            --card-color: #FFE66D;
+            --text-color: #292F36;
+            --wan-color: #FF6B6B;
+            --tong-color: #4ECDC4;
+            --tiao-color: #6BFF6B;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+        
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .instructions {
+            background-color: #f0f8ff;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .card-selector {
+            margin-bottom: 15px;
+        }
+        
+        .suit-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .card {
+            width: 40px;
+            height: 60px;
+            background-color: var(--card-color);
+            border-radius: 5px;
+            margin: 0 3px 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card.wan {
+            border: 2px solid var(--wan-color);
+        }
+        
+        .card.tong {
+            border: 2px solid var(--tong-color);
+        }
+        
+        .card.tiao {
+            border: 2px solid var(--tiao-color);
+        }
+        
+        .card.selected {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-5px);
+        }
+        
+        .card.disabled {
+            background-color: #f5f5f5;
+            color: #ccc;
+            cursor: not-allowed;
+            border-color: #ddd;
+        }
+        
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 50%);
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .card.selected:hover {
+            transform: translateY(-6px);
+        }
+        
+        .card-suit {
+            font-size: 12px;
+            margin-top: 2px;
+        }
+        
+        .card-count-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 18px;
+            height: 18px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .hand-cards {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 15px;
+            min-height: 70px;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        
+        .hand-card {
+            width: 40px;
+            height: 60px;
+            background-color: var(--card-color);
+            border-radius: 5px;
+            margin: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            position: relative;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .hand-card.wan {
+            border: 2px solid var(--wan-color);
+        }
+        
+        .hand-card.tong {
+            border: 2px solid var(--tong-color);
+        }
+        
+        .hand-card.tiao {
+            border: 2px solid var(--tiao-color);
+        }
+        
+        .hand-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .card-count {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .result-container {
+            min-height: 100px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .result-title {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 18px;
+            text-align: center;
+        }
+        
+        .waiting-cards {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .waiting-card {
+            width: 40px;
+            height: 60px;
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 5px;
+            margin: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .error-message {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+        }
+        
+        @media (max-width: 480px) {
+            .card, .hand-card, .waiting-card {
+                width: 30px;
+                height: 45px;
+                font-size: 14px;
+                margin: 0 2px 3px;
+            }
+            
+            .card-suit {
+                font-size: 10px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🀄 成都麻将听牌计算器</h1>
+        
+        <div class="instructions">
+            <p>1. 点击牌面选择手牌（1张、4张、7张等均可）</p>
+            <p>2. 自动计算并显示可胡的牌</p>
+            <p>3. 点击已选手牌可删除</p>
+        </div>
+        
+        <div class="card-selector">
+            <div class="suit-row" id="wan-row">
+                <!-- 万牌会在这里生成 -->
+            </div>
+            
+            <div class="suit-row" id="tong-row">
+                <!-- 筒牌会在这里生成 -->
+            </div>
+            
+            <div class="suit-row" id="tiao-row">
+                <!-- 条牌会在这里生成 -->
+            </div>
+        </div>
+        
+        <div class="card-count">已选: <span id="selected-count">0</span> 张</div>
+        
+        <div class="hand-cards" id="hand-cards-container">
+            <!-- 已选手牌会显示在这里 -->
+        </div>
+        
+        <div class="error-message" id="error-message"></div>
+        
+        <div class="result-container" id="result-container">
+            <div class="result-title">可胡的牌:</div>
+            <div class="waiting-cards" id="waiting-cards">
+                <!-- 听牌结果会显示在这里 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 游戏状态
+            const state = {
+                handCards: [],      // 手牌
+                suits: ['wan', 'tong', 'tiao'] // 所有花色
+            };
+            
+            // DOM元素
+            const wanRow = document.getElementById('wan-row');
+            const tongRow = document.getElementById('tong-row');
+            const tiaoRow = document.getElementById('tiao-row');
+            const handCardsContainer = document.getElementById('hand-cards-container');
+            const selectedCountEl = document.getElementById('selected-count');
+            const resultContainer = document.getElementById('result-container');
+            const waitingCardsEl = document.getElementById('waiting-cards');
+            const errorMessageEl = document.getElementById('error-message');
+            
+            // 初始化
+            init();
+            
+            function init() {
+                // 生成牌面
+                generateCards();
+                
+                // 绑定事件
+                document.querySelectorAll('.card').forEach(card => {
+                    card.addEventListener('click', handleCardSelect);
+                });
+                
+                // 初始计算
+                calculateWaitingCards();
+            }
+            
+            // 生成牌面
+            function generateCards() {
+                // 生成万牌
+                for (let i = 1; i <= 9; i++) {
+                    const card = createCard('wan', i);
+                    wanRow.appendChild(card);
+                }
+                
+                // 生成筒牌
+                for (let i = 1; i <= 9; i++) {
+                    const card = createCard('tong', i);
+                    tongRow.appendChild(card);
+                }
+                
+                // 生成条牌
+                for (let i = 1; i <= 9; i++) {
+                    const card = createCard('tiao', i);
+                    tiaoRow.appendChild(card);
+                }
+            }
+            
+            // 创建牌元素
+            function createCard(suit, value) {
+                const card = document.createElement('div');
+                card.className = `card ${suit}`;
+                card.dataset.suit = suit;
+                card.dataset.value = value;
+                
+                const valueEl = document.createElement('div');
+                valueEl.textContent = value;
+                
+                const suitEl = document.createElement('div');
+                suitEl.className = 'card-suit';
+                suitEl.textContent = getSuitName(suit);
+                
+                card.appendChild(valueEl);
+                card.appendChild(suitEl);
+                
+                return card;
+            }
+            
+            // 处理牌选择
+            function handleCardSelect(e) {
+                const suit = e.currentTarget.dataset.suit;
+                const value = parseInt(e.currentTarget.dataset.value);
+                
+                // 检查是否已经选了4张相同的牌
+                const count = state.handCards.filter(card => card.suit === suit && card.value === value).length;
+                if (count >= 4) {
+                    showError('每种牌最多只能选4张');
+                    return;
+                }
+                
+                // 添加到手牌
+                state.handCards.push({ suit, value });
+                
+                // 更新UI
+                updateHandCardsDisplay();
+                updateCardSelectionState();
+                
+                // 计算听牌
+                calculateWaitingCards();
+            }
+            
+            // 更新手牌显示
+            function updateHandCardsDisplay() {
+                handCardsContainer.innerHTML = '';
+                
+                // 按花色和值排序手牌
+                const sortedHandCards = [...state.handCards].sort((a, b) => {
+                    if (a.suit !== b.suit) {
+                        return state.suits.indexOf(a.suit) - state.suits.indexOf(b.suit);
+                    }
+                    return a.value - b.value;
+                });
+                
+                sortedHandCards.forEach((card, index) => {
+                    const cardEl = document.createElement('div');
+                    cardEl.className = `hand-card ${card.suit}`;
+                    
+                    const valueEl = document.createElement('div');
+                    valueEl.textContent = card.value;
+                    
+                    const suitEl = document.createElement('div');
+                    suitEl.className = 'card-suit';
+                    suitEl.textContent = getSuitName(card.suit);
+                    
+                    cardEl.appendChild(valueEl);
+                    cardEl.appendChild(suitEl);
+                    
+                    // 添加删除功能
+                    cardEl.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        
+                        // 从手牌中移除
+                        const cardIndex = state.handCards.findIndex(c => 
+                            c.suit === card.suit && c.value === card.value
+                        );
+                        
+                        if (cardIndex !== -1) {
+                            state.handCards.splice(cardIndex, 1);
+                            
+                            // 更新显示
+                            updateHandCardsDisplay();
+                            updateCardSelectionState();
+                            
+                            // 计算听牌
+                            calculateWaitingCards();
+                        }
+                    });
+                    
+                    handCardsContainer.appendChild(cardEl);
+                });
+                
+                // 更新计数
+                selectedCountEl.textContent = state.handCards.length;
+            }
+            
+            // 更新牌选择状态
+            function updateCardSelectionState() {
+                document.querySelectorAll('.card').forEach(card => {
+                    const suit = card.dataset.suit;
+                    const value = parseInt(card.dataset.value);
+                    
+                    // 计算已选数量
+                    const count = state.handCards.filter(c => 
+                        c.suit === suit && c.value === value
+                    ).length;
+                    
+                    // 更新选中状态
+                    if (count > 0) {
+                        card.classList.add('selected');
+                        
+                        // 添加计数徽章
+                        const existingBadge = card.querySelector('.card-count-badge');
+                        if (!existingBadge) {
+                            const badge = document.createElement('div');
+                            badge.className = 'card-count-badge';
+                            badge.textContent = count;
+                            card.appendChild(badge);
+                        } else {
+                            existingBadge.textContent = count;
+                        }
+                        
+                        // 如果达到4张，禁用
+                        if (count >= 4) {
+                            card.classList.add('disabled');
+                        } else {
+                            card.classList.remove('disabled');
+                        }
+                    } else {
+                        card.classList.remove('selected');
+                        card.classList.remove('disabled');
+                        
+                        // 移除计数徽章
+                        const badge = card.querySelector('.card-count-badge');
+                        if (badge) {
+                            card.removeChild(badge);
+                        }
+                    }
+                });
+            }
+            
+            // 计算听牌
+            function calculateWaitingCards() {
+                // 隐藏之前的结果和错误
+                resultContainer.style.display = 'none';
+                errorMessageEl.style.display = 'none';
+                
+                // 验证输入
+                if (state.handCards.length === 0) {
+                    return;
+                }
+                
+                // 检查手牌门数是否超过2门
+                const suitCount = new Set(state.handCards.map(card => card.suit)).size;
+                if (suitCount > 2) {
+                    showError('手牌不能超过两门花色');
+                    return;
+                }
+                
+                // 检查手牌数量是否合法（1,4,7,10,13张）
+                const validCounts = [1, 4, 7, 10, 13];
+                if (!validCounts.includes(state.handCards.length)) {
+                    showError(`手牌数量应为1、4、7、10或13张，当前为${state.handCards.length}张`);
+                    return;
+                }
+                
+                // 计算听牌
+                const waitingCards = findWaitingCards();
+                
+                // 显示结果
+                displayWaitingCards(waitingCards);
+            }
+            
+            // 查找听牌
+            function findWaitingCards() {
+                const waitingCards = [];
+                const currentSuits = [...new Set(state.handCards.map(card => card.suit))];
+                
+                // 简单算法：尝试添加每一张可能的牌，检查是否能胡
+                for (const suit of currentSuits) {
+                    for (let value = 1; value <= 9; value++) {
+                        // 临时添加这张牌
+                        const tempHand = [...state.handCards, { suit, value }];
+                        
+                        // 检查是否能胡
+                        if (canHu(tempHand)) {
+                            waitingCards.push({ suit, value });
+                        }
+                    }
+                }
+                
+                return waitingCards;
+            }
+            
+            // 检查是否能胡牌
+            function canHu(cards) {
+                // 先按花色和牌值排序
+                const sortedCards = [...cards].sort((a, b) => {
+                    if (a.suit !== b.suit) {
+                        return state.suits.indexOf(a.suit) - state.suits.indexOf(b.suit);
+                    }
+                    return a.value - b.value;
+                });
+                
+                // 检查是否满足胡牌条件（将对或顺子/刻子）
+                return checkSevenPairs(sortedCards) || checkNormalHu(sortedCards);
+            }
+            
+            // 检查七对
+            function checkSevenPairs(cards) {
+                if (cards.length !== 14) return false;
+                
+                const cardCounts = {};
+                cards.forEach(card => {
+                    const key = `${card.suit}-${card.value}`;
+                    cardCounts[key] = (cardCounts[key] || 0) + 1;
+                });
+                
+                // 检查是否全部是2或4
+                for (const count of Object.values(cardCounts)) {
+                    if (count !== 2 && count !== 4) return false;
+                }
+                
+                // 检查是否有7个对子（如果是4张相同的牌，算作两对）
+                let pairCount = 0;
+                for (const count of Object.values(cardCounts)) {
+                    pairCount += Math.floor(count / 2);
+                }
+                
+                return pairCount === 7;
+            }
+            
+            // 检查普通胡牌（3n+2）
+            function checkNormalHu(cards) {
+                if ((cards.length - 2) % 3 !== 0) return false;
+                
+                // 统计每种牌的数量
+                const cardCounts = {};
+                cards.forEach(card => {
+                    const key = `${card.suit}-${card.value}`;
+                    cardCounts[key] = (cardCounts[key] || 0) + 1;
+                });
+                
+                // 尝试找出将牌（2张相同的牌）
+                const possibleJiangs = Object.keys(cardCounts).filter(key => cardCounts[key] >= 2);
+                
+                for (const jiang of possibleJiangs) {
+                    // 复制计数
+                    const tempCounts = {...cardCounts};
+                    tempCounts[jiang] -= 2;
+                    
+                    // 检查剩余的牌是否能组成顺子或刻子
+                    if (checkMelds(tempCounts)) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
+            
+            // 检查是否能组成顺子或刻子
+            function checkMelds(counts) {
+                const keys = Object.keys(counts).sort();
+                
+                for (const key of keys) {
+                    const [suit, valueStr] = key.split('-');
+                    const value = parseInt(valueStr);
+                    const count = counts[key];
+                    
+                    if (count <= 0) continue;
+                    
+                    // 尝试组成刻子
+                    if (count >= 3) {
+                        counts[key] -= 3;
+                        if (checkMelds(counts)) return true;
+                        counts[key] += 3;
+                    }
+                    
+                    // 尝试组成顺子
+                    const next1 = `${suit}-${value + 1}`;
+                    const next2 = `${suit}-${value + 2}`;
+                    
+                    if (counts[next1] > 0 && counts[next2] > 0 && value <= 7) {
+                        counts[key]--;
+                        counts[next1]--;
+                        counts[next2]--;
+                        if (checkMelds(counts)) return true;
+                        counts[key]++;
+                        counts[next1]++;
+                        counts[next2]++;
+                    }
+                    
+                    // 如果不能组成顺子或刻子，返回false
+                    if (counts[key] > 0) return false;
+                }
+                
+                return true;
+            }
+            
+            // 显示听牌结果
+            function displayWaitingCards(waitingCards) {
+                waitingCardsEl.innerHTML = '';
+                
+                if (waitingCards.length === 0) {
+                    waitingCardsEl.innerHTML = '<div style="text-align:center;color:#666;">没有听牌</div>';
+                } else {
+                    waitingCards.forEach(card => {
+                        const cardEl = document.createElement('div');
+                        cardEl.className = 'waiting-card';
+                        
+                        const valueEl = document.createElement('div');
+                        valueEl.textContent = card.value;
+                        
+                        const suitEl = document.createElement('div');
+                        suitEl.className = 'card-suit';
+                        suitEl.textContent = getSuitName(card.suit);
+                        
+                        cardEl.appendChild(valueEl);
+                        cardEl.appendChild(suitEl);
+                        
+                        waitingCardsEl.appendChild(cardEl);
+                    });
+                }
+                
+                resultContainer.style.display = 'block';
+            }
+            
+            // 显示错误信息
+            function showError(message) {
+                errorMessageEl.textContent = message;
+                errorMessageEl.style.display = 'block';
+            }
+            
+            // 获取花色名称
+            function getSuitName(suit) {
+                const names = {
+                    'wan': '万',
+                    'tong': '筒',
+                    'tiao': '条'
+                };
+                return names[suit] || suit;
+            }
+        });
+    </script>
+</body>
+</html>
